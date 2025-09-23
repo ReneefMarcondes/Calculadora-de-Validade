@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Validade</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #121212;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 400px;
+      width: 100%;
+      background-color: #1e1e1e;
+      padding: 25px;
+      border-radius: 15px;
+      border: 1px solid #333;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+    label {
+      display: block;
+      color: #b0b0b0;
+      margin-top: 15px;
+      margin-bottom: 5px;
+    }
+    input[type="date"], input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      background-color: #333;
+      border: 1px solid #555;
+      border-radius: 8px;
+      color: #ffffff;
+      font-family: 'Poppins', sans-serif;
+      box-sizing: border-box;
+    }
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: 'Poppins', sans-serif;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .primary {
+      background-color: #0099ff;
+      color: white;
+      grid-column: 1 / -1;
+    }
+    .secondary {
+      background-color: #333;
+      color: white;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .results-grid {
+      margin-top: 25px;
+      display: grid;
+      gap: 15px;
+    }
+    .result-item {
+      background-color: #2c2c2c;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .result-item span {
+      display: block;
+      color: #b0b0b0;
+      font-size: 14px;
+    }
+    .result-item strong {
+      display: block;
+      font-size: 20px;
+      color: #ffffff;
+    }
+    .status {
+      font-weight: 600;
+    }
+    .status-yes {
+      color: #28a745 !important;
+    }
+    .status-no {
+      color: #dc3545 !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Calculadora de Validade</h2>
+    </div>
+
+    <label for="fab">Data de Fabricação:</label>
+    <input type="date" id="fab">
+
+    <label for="val">Data de Validade:</label>
+    <input type="date" id="val">
+
+    <label for="rec">Data de Recebimento:</label>
+    <input type="date" id="rec">
+
+    <label for="produto">Produto (Opcional):</label>
+    <input type="text" id="produto" placeholder="Ex: Produto Alfa">
+
+    <label for="qtd">Qtd. Caixas/Unidades (Opcional):</label>
+    <input type="number" id="qtd" placeholder="Ex: 150">
+    <div class="button-group">
+      <button onclick="calculate()" class="primary">Calcular</button>
+      <button onclick="clearFields()" class="secondary">Limpar</button>
+      <button onclick="fillExample()" class="secondary">Exemplo</button>
+    </div>
+
+    <div class="results-grid" id="results">
+      </div>
+  </div>
+
+  <script>
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+    function dateDiffInDays(a, b) {
+      const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+      const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+      return Math.floor((utc2 - utc1) / MS_PER_DAY);
+    }
+
+    function calculate() {
+      // Pega os valores das datas
+      const fabDate = new Date(document.getElementById('fab').value + 'T00:00:00');
+      const valDate = new Date(document.getElementById('val').value + 'T00:00:00');
+      const recDate = new Date(document.getElementById('rec').value + 'T00:00:00');
+      
+      // ADIÇÃO: Pega os valores dos novos campos
+      const produto = document.getElementById('produto').value;
+      const qtd = document.getElementById('qtd').value;
+      
+      const resultsDiv = document.getElementById('results');
+
+      if (isNaN(fabDate) || isNaN(valDate) || isNaN(recDate)) {
+        resultsDiv.innerHTML = '<div class="result-item"><span>Erro</span><strong>Por favor, preencha todas as datas.</strong></div>';
+        return;
+      }
+
+      // Cálculos
+      const diasTotais = dateDiffInDays(fabDate, valDate);
+      const limiteDias = Math.ceil(diasTotais / 3);
+      const diasPassados = dateDiffInDays(fabDate, recDate);
+      const situacao = diasPassados <= limiteDias ? 'SIM' : 'NÃO';
+      const situacaoClass = situacao === 'SIM' ? 'status-yes' : 'status-no';
+
+      // MUDANÇA: Monta o HTML dos resultados, incluindo os campos opcionais se preenchidos
+      let resultsHTML = '';
+      if (produto) {
+        resultsHTML += `
+          <div class="result-item">
+            <span>Produto</span>
+            <strong>${produto}</strong>
+          </div>`;
+      }
+      if (qtd) {
+        resultsHTML += `
+          <div class="result-item">
+            <span>Quantidade</span>
+            <strong>${qtd}</strong>
+          </div>`;
+      }
+      
+      resultsHTML += `
+        <div class="result-item">
+          <span>Dias totais (Validade - Fabricação)</span>
+          <strong>${diasTotais}</strong>
+        </div>
+        <div class="result-item">
+          <span>1/3 dos dias (Limite para Receber)</span>
+          <strong>${limiteDias}</strong>
+        </div>
+        <div class="result-item">
+          <span>Dias passados desde a fabricação</span>
+          <strong>${diasPassados}</strong>
+        </div>
+        <div class="result-item">
+          <span>Situação</span>
+          <strong class="status ${situacaoClass}">${situacao}</strong>
+        </div>
+      `;
+      
+      resultsDiv.innerHTML = resultsHTML;
+    }
+
+    function clearFields() {
+      document.getElementById('fab').value = '';
+      document.getElementById('val').value = '';
+      document.getElementById('rec').value = '';
+      // ADIÇÃO: Limpa os novos campos
+      document.getElementById('produto').value = '';
+      document.getElementById('qtd').value = '';
+      document.getElementById('results').innerHTML = '';
+    }
+
+    function fillExample() {
+      document.getElementById('fab').value = '2025-06-07';
+      document.getElementById('val').value = '2025-10-31';
+      document.getElementById('rec').value = '2025-09-04';
+      // ADIÇÃO: Preenche os novos campos no exemplo
+      document.getElementById('produto').value = 'Produto Exemplo';
+      document.getElementById('qtd').value = '200';
+      calculate();
+    }
+  </script>
+</body>
+</html>
